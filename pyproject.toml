@@ -1,0 +1,23 @@
+[project]
+name = "kraken"
+version = "0.1.0"
+description = "Add your description here"
+readme = "README.md"
+authors = [
+    { name = "Mulaveesala Pranaveswar", email = "mpranaveswar@gmail.com" }
+]
+requires-python = ">=3.13"
+dependencies = [
+    "anthropic>=0.75.0",
+    "apscheduler>=3.11.1",
+    "mcp>=1.23.3",
+    "numpy>=2.3.5",
+    "openai>=2.9.0",
+    "python-dotenv>=1.2.1",
+    "slack-sdk>=3.39.0",
+    "supabase>=2.25.1",
+]
+
+[build-system]
+requires = ["uv_build>=0.9.17,<0.10.0"]
+build-backend = "uv_build"
