@@ -2,6 +2,7 @@ import asyncio
 import logging
 from datetime import datetime, timezone
 from typing import Any
+import time
 
 from mcp.server import Server
 from mcp.server.stdio import stdio_server
@@ -103,24 +104,24 @@ async def handle_get_timestamp(arguments: dict) -> list[TextContent]:
 async def handle_search_messages(arguments: dict) -> list[TextContent]:
     query = arguments["query"]
     limit = arguments.get("limit", config.DEFAULT_SEARCH_LIMIT)
-    
+
     logger.info(f"Searching for: '{query}', limit: {limit}")
-    
+
     try:
-        logger.info("Generating query embedding...")
+        start_embed = time.time()
         embedding, embed_latency, cache_hit = await generate_embedding(query)
         cache_status = "cached" if cache_hit else "generated"
         logger.info(f"Embedding {cache_status} in {embed_latency:.0f}ms")
-        
-        logger.info("Searching vector store...")
+
+        start_search = time.time()
         results = vector_store.search(
             query_embedding=embedding,
             limit=limit,
             min_similarity=config.MIN_SIMILARITY_THRESHOLD
         )
-        
-        logger.info(f"Found {len(results)} results")
-        
+        search_latency = (time.time() - start_search) * 1000
+        logger.info(f"Search completed in {search_latency:.0f}ms, found {len(results)} results")
+
         if not results:
             return [
                 TextContent(
@@ -128,37 +129,32 @@ async def handle_search_messages(arguments: dict) -> list[TextContent]:
                     text=f"No messages found matching '{query}'. Try a different search term or check if data has been synced."
                 )
             ]
-        
+
         response_lines = [
             f"Found {len(results)} relevant messages for '{query}':",
             ""
         ]
-        
+
         for i, result in enumerate(results, 1):
             similarity_pct = result["similarity"] * 100
-            
             response_lines.extend([
                 f"**{i}. {result['author']}** in #{result['channel']} (relevance: {similarity_pct:.0f}%)",
                 f"{result['content'][:200]}{'...' if len(result['content']) > 200 else ''}",
                 ""
             ])
-        
+
         response_text = "\n".join(response_lines)
-        
-        logger.info(f"Search complete. Returning {len(results)} results.")
-        
+
         return [
             TextContent(
                 type="text",
                 text=response_text
             )
         ]
-        
+
     except Exception as e:
         logger.error(f"Search failed: {e}", exc_info=True)
-        
         error_msg = f"Search failed: {str(e)}\n\nPlease try again or contact support if the issue persists."
-        
         return [
             TextContent(
                 type="text",
@@ -170,8 +166,7 @@ async def handle_search_messages(arguments: dict) -> list[TextContent]:
 async def main() -> None:
     logger.info("Starting Kraken MCP server...")
     logger.info(f"Config: OpenAI model={config.OPENAI_EMBEDDING_MODEL}, cache={'enabled' if config.EMBEDDING_CACHE_ENABLED else 'disabled'}")
-    logger.info("Waiting for requests from Claude Desktop on stdin")
-    
+
     async with stdio_server() as (read_stream, write_stream):
         await server.run(
             read_stream,

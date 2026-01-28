@@ -1,59 +1,99 @@
-# Kraken
+## Done
 
-AI-powered semantic search for engineering teams. Ask Claude in natural language to find relevant Slack messages, GitHub discussions, and Drive documents instantly.
+- [x] Block 1: MCP Hello World (2025-12-12)
 
-## Goal
+  - Status: PASS ✅
+  - Latency: ~500ms
+  - Deliverable: Working MCP server
 
-Replace inefficient keyword searches across Slack/GitHub/Drive with intelligent semantic search. Engineers waste hours searching for past decisions and discussions—Kraken surfaces the right context in milliseconds using vector embeddings and Claude Desktop integration.
+- [x] Block 2: Vector Search POC (2025-12-12)
 
-## What We've Built
+  - Status: CONDITIONAL PASS ✅
+  - Relevance: 84%, Latency: 120ms (cached)
+  - Technical debt: Client-side search, TEXT storage
 
-✅ **MCP Server Integration** - Claude Desktop can call our search tools via stdio transport (~500ms latency)
+- [x] Block 3: MCP Integration (2025-12-16)
 
-✅ **Vector Search Engine** - OpenAI embeddings + Supabase pgvector with 84% relevance on test queries
+  - Status: PASS ✅
+  - Deliverable: search_messages tool, cache
+  - Technical debt: Synchronous search, no HNSW
 
-✅ **Persistent Caching** - 92% latency reduction (1500ms → 120ms) with intelligent embedding cache
+- [x] Block 4: Slack Integration (2025-12-17)
 
-✅ **Production Architecture** - Modular codebase (config, embeddings, vector store, MCP protocol) ready for scale
+  - Status: PASS ✅
+  - Deliverable: SlackSyncService, slack_messages table
+  - Technical debt: Threshold 0.0, no permalinks
 
-## Stack
+- [x] Block 5: Background Sync (2025-12-27 to 2026-01-06)
+  - Status: PASS ✅ (with blocking issue)
+  - Time: 20 hours across 4 phases
+  - Deliverable: APScheduler, retry, failure tracking
+  - Performance: 111x speedup (batch enrichment)
+  - **Blocking:** Database duplicates (constraint exists, old data duplicated)
 
-- **MCP Server**: Python 3.13, stdio transport
-- **Vector DB**: Supabase (PostgreSQL + pgvector)
-- **Embeddings**: OpenAI text-embedding-3-small
-- **Package Manager**: uv
+## Now (CRITICAL)
 
-## Quick Start
+- [ ] **Fix Database Duplicates** (10 min)
+  - Run DELETE SQL to remove old duplicates
+  - Verify upsert works going forward
+  - **Blocks:** All future work
 
-```bash
-# Install dependencies
-uv sync
+## Next
 
-# Set up environment
-cp .env.example .env
-# Add: OPENAI_API_KEY, SUPABASE_URL, SUPABASE_SERVICE_KEY
+- [ ] Block 6: Bug Fixes & Documentation (3-4 hours)
 
-# Configure Claude Desktop
-python scripts/setup_claude_config.py
+  - Fix similarity threshold (0.0 → 0.35)
+  - Add permalink generation
+  - Write README.md
+  - Write TROUBLESHOOTING.md
 
-# Test vector search
-python scripts/test_vector_search.py
-```
+- [ ] Block 7: Production Hardening (6-8 hours)
+  - Fix HNSW index usage (pgvector RPC)
+  - ThreadPoolExecutor for search
+  - Structured logging
+  - Health check endpoint
+  - Load testing (100 concurrent)
 
-## Usage
+## Technical Debt Registry
 
-Open Claude Desktop and ask:
-- "Find messages about authentication bugs"
-- "What did the team say about database migrations?"
-- "Show me discussions about API performance"
+**CRITICAL:**
 
-## What's Next
+1. Database duplicates (21 → 42 every sync)
+   - Fix: DELETE SQL provided
+   - Timeline: IMMEDIATE
 
-- **Block 4**: Slack integration (OAuth, message sync, rate limiting)
-- **Block 5**: Multi-customer schemas (isolation, API keys)
-- **Block 6**: Background sync service (hourly updates)
-- **Block 7**: Production hardening (monitoring, scale optimization)
+**High Priority:** 2. Client-side search O(n) (breaks >10k)
 
-## Architecture
+- Fix: Supabase RPC with HNSW
+- Timeline: Block 7
 
-See `ARCHITECTURE.md` and `COMPONENTS.md` for detailed system design, cost analysis, and technical decisions.
+3. Similarity threshold 0.0 (weak results)
+   - Fix: Set to 0.35
+   - Timeline: Block 6
+
+**Medium Priority:** 4. Synchronous search (no concurrency)
+
+- Fix: ThreadPoolExecutor
+- Timeline: Block 7
+
+5. No permalinks (can't click through)
+   - Fix: Generate Slack URLs
+   - Timeline: Block 6
+
+**Low Priority:** 6. Single embedding model (vendor lock-in)
+
+- Timeline: Month 2-3
+
+7. No real-time sync (15-60 min lag)
+   - Timeline: Month 3-4
+
+## Metrics Targets
+
+**MVP (End of Block 7):**
+
+- Uptime: 99.9%
+- Search relevance: >70%
+- Sync lag: <60 min
+- Search latency p95: <2s
+- Concurrent users: 100
+- Beta customers: 10

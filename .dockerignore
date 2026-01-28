@@ -1,0 +1,52 @@
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+
+# Virtual environment
+.venv/
+venv/
+ENV/
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# Git
+.git/
+.gitignore
+.gitattributes
+
+# Environment and secrets
+.env
+.env.*
+!.env.example
+
+# Cache and local data
+.cache/
+*.log
+logs/
+
+# APScheduler
+jobs.sqlite
+jobs.sqlite-shm
+jobs.sqlite-wal
+
+# Tests and docs
+tests/
+docs/
+*.md
+!README.md
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Docker
+Dockerfile
+docker-compose.yml
+.dockerignore

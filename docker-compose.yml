@@ -1,0 +1,28 @@
+services:
+  scheduler:
+    build: .
+    container_name: kraken-scheduler
+    # No --channels flag: reads from SYNC_CHANNELS env var
+    environment:
+      # All config via env vars (12-factor methodology)
+      - SYNC_CHANNELS=${SYNC_CHANNELS}
+      - OPENAI_API_KEY=${OPENAI_API_KEY}
+      - SUPABASE_URL=${SUPABASE_URL}
+      - SUPABASE_SERVICE_KEY=${SUPABASE_SERVICE_KEY}
+      - SLACK_BOT_TOKEN=${SLACK_BOT_TOKEN}
+    volumes:
+      # Persist cache across restarts
+      - ./.cache:/app/.cache
+    restart: unless-stopped
+    # Health check: verify scheduler is running
+    healthcheck:
+      test: ["CMD", "python", "-c", "import sys; sys.exit(0)"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 5s
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"
